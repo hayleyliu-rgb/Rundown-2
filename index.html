@@ -616,7 +616,7 @@ function render(){
       <h2>要做一份活動流程表？</h2>
       <p class="sub">選一條路開始。做完可以匯出 Excel、列印，或存檔下次接續。</p>
       ${cloudOn()?`<div class="cloudbox">
-        <div class="cbhead"><b>雲端共用${CLIST&&CLIST!=="loading"&&CLIST.length?`　已有 ${CLIST.length} 份`:""}</b>
+        <div class="cbhead"><b style="font-size:13.5px">接續大家共用的流程${CLIST&&CLIST!=="loading"&&CLIST.length?`　共 ${CLIST.length} 份`:""}</b>
           <button class="mini" onclick="cloudList()">重新整理</button></div>
         ${CLIST==="loading"?`<p class="cbnone">讀取中…</p>`
           :CLIST&&CLIST.length?`<div class="cbl">`+CLIST.slice(0,6).map(x=>
@@ -744,7 +744,9 @@ function panelHtml(todos){
             <button class="mini" onclick="cloudHistory('${x.id}')">修改紀錄</button>
             <button class="mini warn" onclick="cloudRemove('${x.id}','${esc(x.name)}')">刪除</button></td></tr>`);
         h+=`</table>`;}
-      if(CLOG){h+=`<h3 style="margin-top:18px">修改紀錄</h3>`;
+      if(CLOG){const cn=(CLIST&&CLIST!=="loading"?(CLIST.find(x=>x.id===CLOG_ID)||{}).name:"")||"";
+        h+=`<h3 style="margin-top:18px">《${esc(cn)}》的修改紀錄　<span style="font-weight:400;text-transform:none;letter-spacing:0">只顯示這一份活動的異動</span>
+          <button class="mini" style="float:right" onclick="CLOG=null;render()">收起</button></h3>`;
         h+=CLOG==="loading"?`<p class="libhint" style="padding-left:0">讀取中…</p>`
           :CLOG.length?`<table class="ct"><tr><th>時間</th><th>操作者</th><th>版本</th><th>改了什麼</th><th></th></tr>`+
             CLOG.map(l=>`<tr><td class="mono" style="width:120px;white-space:nowrap">${dt(l.at)}</td>
@@ -1517,10 +1519,10 @@ drawBlocks();
   CLOUD.api=q.get("api")||CFG.api||"";CLOUD.key=q.get("key")||CFG.key||"";
   if(!CLOUD.api)return;
   await cloudList();
-  if(CERR||!Array.isArray(CLIST)||!CLIST.length)return;
   const doc=q.get("doc");
-  const target=(doc&&CLIST.some(x=>x.id===doc))?doc:CLIST[0].id;
-  await cloudOpen(target);})();
+  if(!doc)return;                                   // 沒指定就停在起始畫面
+  if(Array.isArray(CLIST)&&CLIST.some(x=>x.id===doc))await cloudOpen(doc);
+  else{setDocUrl("");toast("這條連結指向的流程已經不在了");}})();
 loadHash();
 ["m-name","m-date","m-start","m-venue","m-ver"].forEach(id=>$(id).oninput=render);
 $("w-guests").oninput=drawWiz;$("w-start").oninput=drawWiz;
