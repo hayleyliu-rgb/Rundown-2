@@ -56,6 +56,8 @@ main{display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .f label{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--ink3);text-transform:uppercase;margin-bottom:2px}
 .f input{font-size:14px;border-bottom:1px solid transparent;padding:1px 0}
 .f input:hover{border-bottom-color:var(--line)}
+#m-name:placeholder-shown{border-bottom:1px dashed var(--amber)}
+#m-name::placeholder{color:var(--amber);opacity:.8}
 .w1 input{width:200px}.w2 input{width:124px}.w3 input{width:64px;font-family:"IBM Plex Mono",monospace}
 .mr{margin-left:auto;padding:0;border:none;text-align:right}
 .mr .k{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--ink3);text-transform:uppercase}
@@ -197,6 +199,7 @@ td textarea{padding:6px 7px;font-size:12.5px;line-height:1.55;resize:none;min-he
 .todo .txt{color:var(--red)}
 .ct{border-collapse:collapse;min-width:420px}
 .ct td,.ct th{border:1px solid var(--line);padding:3px 7px;font-size:12.5px}
+.sumcell{font-size:12px;line-height:1.6;white-space:normal;word-break:break-word}
 .cerr{background:var(--red-soft);border:1px solid var(--red);border-radius:5px;padding:10px 13px;
   font-size:12.5px;color:var(--red);line-height:1.7;margin-bottom:10px;white-space:normal;word-break:break-all}
 .clset{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-top:4px}
@@ -293,7 +296,7 @@ td textarea{padding:6px 7px;font-size:12.5px;line-height:1.55;resize:none;min-he
 </aside>
 <main>
   <div class="meta">
-    <div class="f w1"><label>活動名稱</label><input id="m-name" placeholder="例：公館運動館開幕大會"></div>
+    <div class="f w1"><label>活動名稱</label><input id="m-name" placeholder="尚未命名，點這裡輸入"></div>
     <div class="f w2"><label>日期</label><input id="m-date" type="date"></div>
     <div class="f w3"><label>開始</label><input id="m-start" value="09:30"></div>
     <div class="f w2"><label>場地</label><input id="m-venue" placeholder="例：一樓中庭"></div>
@@ -359,6 +362,12 @@ td textarea{padding:6px 7px;font-size:12.5px;line-height:1.55;resize:none;min-he
 <div class="mask" id="mask"><div class="modal">
   <div class="mhd"><h2>產生新流程</h2><p>選類型與規模，工具會推導出段落、分組與各組建議人力。產生後每一格都能改。</p></div>
   <div class="mbd">
+    <div class="mrow"><label>這場活動叫什麼</label><div class="inline">
+      <div class="mini-f" style="flex:1"><label>活動名稱</label>
+        <input id="w-name" style="width:100%;font-family:inherit" placeholder="例：公館運動館開幕記者會"></div>
+      <div class="mini-f"><label>場地</label>
+        <input id="w-venue" style="font-family:inherit" placeholder="例：一樓中庭"></div>
+    </div></div>
     <div class="mrow"><label>活動類型</label><div class="opts" id="w-type"></div></div>
     <div class="mrow"><label>包含哪些環節</label><div class="opts" id="w-el"></div></div>
     <div class="mrow"><label>規模與時間</label><div class="inline">
@@ -542,7 +551,9 @@ function fmt(txt){return esc(txt||"").split("\n").map(l=>{const t=l.trim();
   return ph(l.replace(/(\d{1,2}:\d{2})/g,'<span class="clk">$1</span>'));}).join("\n");}
 
 /* ═════════ 精靈 ═════════ */
-function openWiz(){$("mask").classList.add("on");$("w-start").value=$("m-start").value;drawWiz();}
+function openWiz(){$("mask").classList.add("on");$("w-start").value=$("m-start").value;
+  $("w-name").value=$("m-name").value;$("w-venue").value=$("m-venue").value;drawWiz();
+  setTimeout(()=>$("w-name").focus(),60);}
 function closeWiz(){$("mask").classList.remove("on");}
 function pickType(t){W.type=t;W.els=[...TYPES[t].el];drawWiz();}
 function toggleEl(e){W.els.includes(e)?W.els=W.els.filter(x=>x!==e):W.els.push(e);drawWiz();}
@@ -561,6 +572,8 @@ function runWiz(){
   const c=compose(W.type,W.els,G);
   if((S.rows.length||S.posts.length)&&!confirm("會覆蓋目前的流程與分組，確定嗎？"))return;
   $("m-start").value=$("w-start").value;
+  if($("w-name").value.trim())$("m-name").value=$("w-name").value.trim();
+  if($("w-venue").value.trim())$("m-venue").value=$("w-venue").value.trim();
   CLOUD.id="";CLOUD.ver=0;setDocUrl("");
   S.posts=c.groups.map(g=>({id:"p"+(++uid),name:g,people:"",n:c.head[g]||1}));
   S.rows=c.rows.map(mkRow);
@@ -739,8 +752,11 @@ function panelHtml(todos){
         h+=`</table>`;}
       if(CLOG){h+=`<h3 style="margin-top:18px">修改紀錄</h3>`;
         h+=CLOG==="loading"?`<p class="libhint" style="padding-left:0">讀取中…</p>`
-          :CLOG.length?`<table class="ct"><tr><th>時間</th><th>操作者</th><th>版本</th><th>動作</th></tr>`+
-            CLOG.map(l=>`<tr><td class="mono">${dt(l.at)}</td><td>${esc(l.by)}</td><td class="mono">v${l.ver}</td><td>${esc(l.act)}</td></tr>`).join("")+`</table>`
+          :CLOG.length?`<table class="ct"><tr><th>時間</th><th>操作者</th><th>版本</th><th>改了什麼</th><th></th></tr>`+
+            CLOG.map(l=>`<tr><td class="mono" style="width:120px;white-space:nowrap">${dt(l.at)}</td>
+              <td style="width:82px">${esc(l.by)}</td><td class="mono" style="width:44px">v${l.ver}</td>
+              <td class="sumcell">${l.act==="刪除"?'<span style="color:var(--red)">':""}${esc(l.sum||l.act)}${l.act==="刪除"?"</span>":""}</td>
+              <td style="width:64px">${l.has&&l.act!=="刪除"?`<button class="mini" onclick="cloudRestore('${CLOG_ID}',${l.ver})">還原</button>`:""}</td></tr>`).join("")+`</table>`
           :`<p class="libhint" style="padding-left:0">還沒有紀錄。</p>`;}
       h+=`<p class="libhint" style="padding-left:0;margin-top:14px">你的名字：<b>${esc(CLOUD.who||"（尚未填寫，第一次儲存時會問）")}</b>　·　
         把這條網址發給同事，他們打開就直接連上：<br><code style="word-break:break-all">${esc(cloudCfgLink())}</code></p>`;
@@ -988,6 +1004,8 @@ function doImport(){
 
 
 /* ═════════ 雲端共用（Google Apps Script） ═════════ */
+/* 想讓同事開乾淨的網址就自動連上，把兩個值填在這裡再上傳，網址就不用帶參數了 */
+const CFG={api:"", key:""};
 let CLOUD={api:"",key:"",who:"",id:"",ver:0,name:""};
 function cloudOn(){return !!CLOUD.api;}
 async function callApi(action,payload){
@@ -1016,7 +1034,7 @@ function setupCloud(){
   if(!CLOUD.api)return toast("先貼上網頁應用程式網址");
   history.replaceState(null,"",cloudCfgLink());
   cloudList();}
-let CLIST=null, CLOG=null, CERR="";
+let CLIST=null, CLOG=null, CERR="", CLOG_ID="";
 async function cloudList(){
   if(!cloudOn())return render();
   CLIST="loading"; CERR=""; render();
@@ -1053,7 +1071,10 @@ async function cloudSave(asNew){
   if(!S.rows.length)return toast("流程是空的");
   if(!CLOUD.who){const n=prompt("請輸入你的名字（會記在修改紀錄裡）","");
     if(!n)return; CLOUD.who=n.trim();}
-  const name=meta().name||"未命名活動";
+  let name=meta().name.trim();
+  if(!name){const n=prompt("這份流程要叫什麼名字？（大家在共用清單上看到的就是這個）","");
+    if(!n||!n.trim())return toast("要先取個名字才能存到雲端");
+    name=n.trim();$("m-name").value=name;render();}
   const body={name,data:{meta:meta(),posts:S.posts,
     rows:S.rows.map(({uid,st,drift,kid,kidSum,...r})=>r),contacts:S.contacts,items:S.items}};
   if(!asNew&&CLOUD.id){body.id=CLOUD.id;body.base=CLOUD.ver;}
@@ -1069,7 +1090,7 @@ async function cloudSave(asNew){
     CERR="";cloudList();toast(`已儲存《${r.name}》v${r.ver}`);}
   catch(e){CERR="儲存失敗："+(e.message||e);panel="cloud";render();}}
 async function cloudHistory(id){
-  panel="cloud";CLOG="loading";render();
+  panel="cloud";CLOG="loading";CLOG_ID=id;render();
   try{const r=await callApi("history",{id});CLOG=r.ok?r.log:[];}
   catch(e){CLOG=[];toast(e.message);}
   render();}
@@ -1079,6 +1100,16 @@ async function cloudRemove(id,name){
     if(r.error)return toast(r.error);
     if(CLOUD.id===id){CLOUD.id="";CLOUD.ver=0;}
     CLIST=null;cloudList();toast("已刪除");}
+  catch(e){toast(e.message);}}
+async function cloudRestore(id,ver){
+  if(!confirm(`確定要把這份流程還原成 v${ver}？\n還原後會變成一個新版本，之前的紀錄都還在。`))return;
+  try{
+    const r=await callApi("restore",{id,ver});
+    if(r.error)return toast(r.error);
+    applyLoaded({__cloud:1,meta:r.data.meta,posts:r.data.posts,rows:r.data.rows,
+                 contacts:r.data.contacts,items:r.data.items});
+    CLOUD.id=id;CLOUD.ver=CLIST&&CLIST!=="loading"?(CLIST.find(x=>x.id===id)||{}).ver||0:0;
+    panel=null;render();toast(`已載入 v${ver} 的內容，確認後按「儲存」才會寫回去`);}
   catch(e){toast(e.message);}}
 const dt=v=>v?new Date(v).toLocaleString("zh-TW",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"";
 
@@ -1485,7 +1516,7 @@ $("fileIn").onchange=function(){const f=this.files[0];if(!f)return;
 /* init */
 drawBlocks();
 (async()=>{const q=new URLSearchParams(location.search);
-  CLOUD.api=q.get("api")||"";CLOUD.key=q.get("key")||"";
+  CLOUD.api=q.get("api")||CFG.api||"";CLOUD.key=q.get("key")||CFG.key||"";
   if(!CLOUD.api)return;
   await cloudList();
   if(CERR||!Array.isArray(CLIST)||!CLIST.length)return;
