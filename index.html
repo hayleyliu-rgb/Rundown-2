@@ -759,7 +759,8 @@ function panelHtml(todos){
               <td style="width:64px">${l.has&&l.act!=="刪除"?`<button class="mini" onclick="cloudRestore('${CLOG_ID}',${l.ver})">還原</button>`:""}</td></tr>`).join("")+`</table>`
           :`<p class="libhint" style="padding-left:0">還沒有紀錄。</p>`;}
       h+=`<p class="libhint" style="padding-left:0;margin-top:14px">你的名字：<b>${esc(CLOUD.who||"（尚未填寫，第一次儲存時會問）")}</b>　·　
-        把這條網址發給同事，他們打開就直接連上：<br><code style="word-break:break-all">${esc(cloudCfgLink())}</code></p>`;
+        ${CFG.api?`設定已內建在網頁裡，同事直接開 <code>${esc(location.origin+location.pathname)}</code> 就會自動連上。`
+        :`把這條網址發給同事，他們打開就直接連上：<br><code style="word-break:break-all">${esc(cloudCfgLink())}</code>`}</p>`;
     }
     h+=`</div>`;}
   if(panel==="item"){
@@ -1005,7 +1006,10 @@ function doImport(){
 
 /* ═════════ 雲端共用（Google Apps Script） ═════════ */
 /* 想讓同事開乾淨的網址就自動連上，把兩個值填在這裡再上傳，網址就不用帶參數了 */
-const CFG={api:"", key:""};
+const CFG={
+  api:"https://script.google.com/macros/s/AKfycbzwYAdlMzN0iSeS3_owlEASIHuP-5WLJ1iSQSoRiOMJvEm0q_OQfoWxb-bj_1K_vPt4/exec",
+  key:"landseed"
+};
 let CLOUD={api:"",key:"",who:"",id:"",ver:0,name:""};
 function cloudOn(){return !!CLOUD.api;}
 async function callApi(action,payload){
