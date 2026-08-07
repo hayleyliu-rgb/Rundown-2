@@ -340,9 +340,8 @@ td textarea{padding:6px 7px;font-size:12.5px;line-height:1.55;resize:none;min-he
   </div>
   <div class="cloudbar" id="cloudbar" style="display:none">
     <span id="cb-info"></span>
-    <button class="btn" onclick="cloudSave(false)" id="cb-save">儲存</button>
-    <button class="btn" onclick="copyDocLink()">複製這份的連結</button>
-    <button class="btn" onclick="togglePanel('cloud')">切換其他流程</button>
+    <button class="btn" id="cb-save">儲存</button>
+    <button class="btn" id="cb-link" onclick="copyDocLink()">複製這份的連結</button>
   </div>
   <div class="shared" id="shared" style="display:none">
     <span>你正在看別人分享的流程快照。可以直接改，改完按「輸出 → 產生分享連結」傳回去；或按「輸出 → 存檔」留一份。</span>
@@ -601,10 +600,12 @@ function render(){
   if(cloudOn()){cbar.style.display="";
     const me=CLIST&&CLIST!=="loading"?CLIST.find(x=>x.id===CLOUD.id):null;
     $("cb-info").innerHTML=CLOUD.id
-      ?`雲端共用中：<b>${esc(CLOUD.name)}</b> <span class="v">v${CLOUD.ver}</span>${me?` · 上次由 ${esc(me.by||"")} 於 ${dt(me.at)} 更新`:""}`
-      :`目前是本機的內容，還沒存到雲端`;
-    $("cb-save").textContent=CLOUD.id?"儲存":"存成新的一份";
+      ?`目前編輯：<b>${esc(CLOUD.name)}</b> <span class="v">v${CLOUD.ver}</span>${me?` · 上次由 ${esc(me.by||"")} 於 ${dt(me.at)} 更新`:""}`
+      :`這份還沒存到雲端，只在你的瀏覽器裡`;
+    $("cb-save").textContent=CLOUD.id?"儲存":"存到雲端";
+    $("cb-save").className="btn"+(CLOUD.id?"":" pri");
     $("cb-save").onclick=()=>cloudSave(!CLOUD.id);
+    $("cb-link").style.display=CLOUD.id?"":"none";
   }else cbar.style.display="none";
   $("btn-ph").className="btn"+(panel==="ph"?" pri":"");
   $("btn-it").className="btn"+(panel==="item"?" pri":"");
@@ -725,7 +726,7 @@ function panelHtml(todos){
           <button class="btn pri" onclick="setupCloud()">連上</button>
         </div>`;
     }else{
-      h+=`<div class="ithead"><h3 style="margin:0">大家共用的流程</h3>
+      h+=`<div class="ithead"><h3 style="margin:0">大家共用的流程　<span style="font-weight:400;text-transform:none;letter-spacing:0">上方那條藍色列是「目前這一份」，這裡是「所有的流程」</span></h3>
         <span class="itcnt">${CLOUD.id?`目前編輯：《${esc(CLOUD.name)}》v${CLOUD.ver}`:"目前是本機的內容，尚未存到雲端"}</span>
         <button class="btn" onclick="cloudList()">重新整理</button>
         <button class="btn" onclick="cloudTest()">測試連線</button>
