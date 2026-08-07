@@ -99,6 +99,10 @@ main{display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .chip:hover{border-color:var(--indigo)}
 .chip.on{background:var(--indigo);color:#fff;border-color:var(--indigo)}
 .badge{display:inline-block;min-width:15px;padding:0 4px;margin-left:5px;border-radius:8px;background:var(--red);color:#fff;font-size:10px;font-family:"IBM Plex Mono",monospace;text-align:center}
+.cloudbar{display:flex;align-items:center;gap:9px;padding:7px 18px;background:var(--indigo-soft);
+  border-bottom:1px solid var(--line);font-size:12.5px;color:var(--indigo)}
+.cloudbar span:first-child{flex:1}
+.cloudbar .v{font-family:"IBM Plex Mono",monospace;font-weight:600}
 .shared{display:flex;align-items:center;gap:12px;padding:8px 18px;background:var(--amber-soft);
   border-bottom:1px solid var(--headline);font-size:12px;color:#6E4E0B}
 .shared span{flex:1}
@@ -193,6 +197,8 @@ td textarea{padding:6px 7px;font-size:12.5px;line-height:1.55;resize:none;min-he
 .todo .txt{color:var(--red)}
 .ct{border-collapse:collapse;min-width:420px}
 .ct td,.ct th{border:1px solid var(--line);padding:3px 7px;font-size:12.5px}
+.cerr{background:var(--red-soft);border:1px solid var(--red);border-radius:5px;padding:10px 13px;
+  font-size:12.5px;color:var(--red);line-height:1.7;margin-bottom:10px;white-space:normal;word-break:break-all}
 .clset{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-top:4px}
 .clset label{display:flex;flex-direction:column;font-size:11px;font-weight:700;color:var(--ink3);gap:4px}
 .clset input{border:1px solid var(--line);border-radius:3px;padding:6px 9px;font-size:13px;width:400px;font-weight:400;color:var(--ink)}
@@ -210,6 +216,15 @@ td textarea{padding:6px 7px;font-size:12.5px;line-height:1.55;resize:none;min-he
 .start{max-width:940px;margin:0 auto;padding:52px 24px 60px}
 .start h2{font-size:23px;font-weight:700;letter-spacing:-.01em}
 .start .sub{color:var(--ink2);margin:6px 0 26px;font-size:13.5px}
+.cloudbox{border:1px solid var(--line);border-radius:7px;background:var(--panel);padding:14px 16px;margin-bottom:14px}
+.cbhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.cbhead b{font-size:13.5px}
+.cbl{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:7px}
+.cbi{text-align:left;padding:9px 11px;border:1px solid var(--line);border-radius:5px;transition:.12s}
+.cbi:hover{border-color:var(--indigo);background:var(--indigo-soft)}
+.cbi b{display:block;font-size:13px;font-weight:700}
+.cbi span{display:block;font-size:11px;color:var(--ink3);font-family:"IBM Plex Mono",monospace;margin-top:2px}
+.cbnone{font-size:12.5px;color:var(--ink3)}
 .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
 .card{position:relative;text-align:left;padding:18px 17px 17px;border:1px solid var(--line);border-radius:7px;background:var(--panel);transition:.14s}
 .card:hover{border-color:var(--indigo);box-shadow:0 4px 18px rgba(20,25,32,.09);transform:translateY(-1px)}
@@ -258,7 +273,7 @@ td textarea{padding:6px 7px;font-size:12.5px;line-height:1.55;resize:none;min-he
 @media print{
   @page{size:A4 landscape;margin:8mm}
   body{overflow:visible;height:auto;background:#fff;font-size:9.5px}
-  aside,.bar,.rb,.hint,.c-act,.rowbtns,.toast,.mask{display:none!important}
+  aside,.bar,.rb,.hint,.c-act,.rowbtns,.toast,.mask,.cloudbar{display:none!important}
   .app{display:block;height:auto}.wrap{overflow:visible}
   .meta{padding:0 0 6px;border:none}
   th.sk,td.sk,thead th{position:static}
@@ -326,6 +341,12 @@ td textarea{padding:6px 7px;font-size:12.5px;line-height:1.55;resize:none;min-he
       </div></div>
       <button class="btn ic" onclick="toggleHint()" title="寫法說明">?</button>
     </div>
+  </div>
+  <div class="cloudbar" id="cloudbar" style="display:none">
+    <span id="cb-info"></span>
+    <button class="btn" onclick="cloudSave(false)" id="cb-save">儲存</button>
+    <button class="btn" onclick="copyDocLink()">複製這份的連結</button>
+    <button class="btn" onclick="togglePanel('cloud')">切換其他流程</button>
   </div>
   <div class="shared" id="shared" style="display:none">
     <span>你正在看別人分享的流程快照。可以直接改，改完按「輸出 → 產生分享連結」傳回去；或按「輸出 → 存檔」留一份。</span>
@@ -540,6 +561,7 @@ function runWiz(){
   const c=compose(W.type,W.els,G);
   if((S.rows.length||S.posts.length)&&!confirm("會覆蓋目前的流程與分組，確定嗎？"))return;
   $("m-start").value=$("w-start").value;
+  CLOUD.id="";CLOUD.ver=0;setDocUrl("");
   S.posts=c.groups.map(g=>({id:"p"+(++uid),name:g,people:"",n:c.head[g]||1}));
   S.rows=c.rows.map(mkRow);
   S.rows.forEach((r,i)=>{if(r.lvl===1&&(i===0||S.rows[i-1].span))r.lvl=0;});
@@ -569,6 +591,15 @@ function render(){
 
   $("btn-todo").className="btn"+(panel==="todo"?" pri":"");
   $("btn-cl").className="btn"+(panel==="cloud"?" pri":"");
+  const cbar=$("cloudbar");
+  if(cloudOn()){cbar.style.display="";
+    const me=CLIST&&CLIST!=="loading"?CLIST.find(x=>x.id===CLOUD.id):null;
+    $("cb-info").innerHTML=CLOUD.id
+      ?`雲端共用中：<b>${esc(CLOUD.name)}</b> <span class="v">v${CLOUD.ver}</span>${me?` · 上次由 ${esc(me.by||"")} 於 ${dt(me.at)} 更新`:""}`
+      :`目前是本機的內容，還沒存到雲端`;
+    $("cb-save").textContent=CLOUD.id?"儲存":"存成新的一份";
+    $("cb-save").onclick=()=>cloudSave(!CLOUD.id);
+  }else cbar.style.display="none";
   $("btn-ph").className="btn"+(panel==="ph"?" pri":"");
   $("btn-it").className="btn"+(panel==="item"?" pri":"");
   $("btn-ct").className="btn"+(panel==="contact"?" pri":"");
@@ -577,6 +608,15 @@ function render(){
     $("wrap").innerHTML=`<div class="start">
       <h2>要做一份活動流程表？</h2>
       <p class="sub">選一條路開始。做完可以匯出 Excel、列印，或存檔下次接續。</p>
+      ${cloudOn()?`<div class="cloudbox">
+        <div class="cbhead"><b>雲端共用${CLIST&&CLIST!=="loading"&&CLIST.length?`　已有 ${CLIST.length} 份`:""}</b>
+          <button class="mini" onclick="cloudList()">重新整理</button></div>
+        ${CLIST==="loading"?`<p class="cbnone">讀取中…</p>`
+          :CLIST&&CLIST.length?`<div class="cbl">`+CLIST.slice(0,6).map(x=>
+            `<button class="cbi" onclick="cloudOpen('${x.id}')"><b>${esc(x.name)}</b>
+              <span>v${x.ver}　${dt(x.at)}　${esc(x.by||"")}</span></button>`).join("")+`</div>`
+          :`<p class="cbnone">${CERR?"讀不到雲端資料，請點右上角「雲端共用 → 測試連線」看原因。":"還沒有人存過流程。做好一份之後，到「雲端共用」按「存成新的一份」。"}</p>`}
+      </div>`:""}
       <div class="cards">
         <button class="card hi" onclick="openWiz()">
           <span class="tag">建議從這裡開始</span>
@@ -672,6 +712,7 @@ function panelHtml(todos){
     if(!cloudOn()){
       h+=`<h3>還沒接上共用資料庫</h3>
         <p class="libhint" style="padding-left:0">照「設定說明」把 Google Apps Script 部署好，把網址貼在下面。設定完會產生一條專屬網址，把那條網址發給大家，之後打開就直接連上了。</p>
+        <p class="libhint" style="padding-left:0;color:var(--red)">如果你是收到同事給的網址卻看到這個畫面，代表那條網址沒有帶設定。請跟他要「雲端共用」頁面最下方那一條完整網址。</p>
         <div class="clset">
           <label>網頁應用程式網址<input id="cl-api" placeholder="https://script.google.com/macros/s/……/exec"></label>
           <label>通行碼<input id="cl-key" placeholder="跟 Code.gs 裡的 KEY 一樣"></label>
@@ -681,10 +722,12 @@ function panelHtml(todos){
       h+=`<div class="ithead"><h3 style="margin:0">大家共用的流程</h3>
         <span class="itcnt">${CLOUD.id?`目前編輯：《${esc(CLOUD.name)}》v${CLOUD.ver}`:"目前是本機的內容，尚未存到雲端"}</span>
         <button class="btn" onclick="cloudList()">重新整理</button>
+        <button class="btn" onclick="cloudTest()">測試連線</button>
         ${CLOUD.id?`<button class="btn" onclick="cloudSave(false)">覆蓋儲存</button>`:""}
         <button class="btn pri" onclick="cloudSave(true)">存成新的一份</button></div>`;
+      if(CERR)h+=`<div class="cerr">${esc(CERR).replace(/\n/g,"<br>")}</div>`;
       if(CLIST==="loading")h+=`<p class="libhint" style="padding-left:0">讀取中…</p>`;
-      else if(!CLIST||!CLIST.length)h+=`<p class="libhint" style="padding-left:0">還沒有任何流程。做好一份之後按「存成新的一份」。</p>`;
+      else if(!CLIST||!CLIST.length)h+=`<p class="libhint" style="padding-left:0">${CERR?"因為上面的問題，讀不到清單。":"連得上後台，但裡面還沒有任何流程。做好一份之後按「存成新的一份」。"}</p>`;
       else{h+=`<table class="ct itt"><tr><th>活動名稱</th><th>版本</th><th>最後更新</th><th>更新者</th><th></th></tr>`;
         CLIST.forEach(x=>h+=`<tr${CLOUD.id===x.id?' style="background:var(--indigo-soft)"':""}>
           <td><b>${esc(x.name)}</b></td><td class="mono" style="width:52px">v${x.ver}</td>
@@ -783,7 +826,8 @@ function drawBlocks(){
 function tmOpen(label){const b=[...document.querySelectorAll(".menu>button")].find(x=>x.textContent.includes(label));
   if(b){document.querySelectorAll(".menu").forEach(x=>x.classList.remove("open"));b.parentNode.classList.add("open");
     b.scrollIntoView({block:"center"});}}
-function blankStart(){["主持人","總控","貴賓報到組","舞台組","音控視訊","機動組"]
+function blankStart(){CLOUD.id="";CLOUD.ver=0;setDocUrl("");
+  ["主持人","總控","貴賓報到組","舞台組","音控視訊","機動組"]
   .forEach(n=>S.posts.push({id:"p"+(++uid),name:n,people:"",n:1}));
   S.rows.push(mkRow(null));view="__all";render();}
 function addRow(){S.rows.push(mkRow(null));render();}
@@ -952,6 +996,16 @@ async function callApi(action,payload){
     body:JSON.stringify(Object.assign({action,key:CLOUD.key,who:CLOUD.who||"未具名"},payload||{}))});
   const t=await r.text();
   try{return JSON.parse(t);}catch(e){throw new Error("後台回傳了非預期的內容，請確認網址是 /exec 結尾、且部署權限選了「所有人」");}}
+function setDocUrl(id){
+  const q=new URLSearchParams(location.search);
+  if(id)q.set("doc",id); else q.delete("doc");
+  history.replaceState(null,"",location.pathname+"?"+q.toString());}
+function copyDocLink(){
+  const t=document.createElement("textarea");t.value=location.href;
+  document.body.appendChild(t);t.select();
+  try{navigator.clipboard?navigator.clipboard.writeText(t.value):document.execCommand("copy");}
+  catch(e){document.execCommand("copy");}
+  document.body.removeChild(t);toast("已複製這份流程的連結");}
 function cloudCfgLink(){
   const u=location.origin+location.pathname+"?api="+encodeURIComponent(CLOUD.api)+
     (CLOUD.key?"&key="+encodeURIComponent(CLOUD.key):"");
@@ -962,21 +1016,37 @@ function setupCloud(){
   if(!CLOUD.api)return toast("先貼上網頁應用程式網址");
   history.replaceState(null,"",cloudCfgLink());
   cloudList();}
-let CLIST=null, CLOG=null;
+let CLIST=null, CLOG=null, CERR="";
 async function cloudList(){
   if(!cloudOn())return render();
-  CLIST="loading"; render();
+  CLIST="loading"; CERR=""; render();
   try{const r=await callApi("list");
-    CLIST=r.ok?r.list:[]; if(r.error)toast(r.error);}
-  catch(e){CLIST=[];toast(e.message);}
+    if(r.error){CERR=r.error;CLIST=[];}else{CLIST=r.list||[];}}
+  catch(e){CERR=e.message||String(e);CLIST=[];}
+  render();}
+async function cloudTest(){
+  CERR="";render();
+  try{
+    const r=await fetch(CLOUD.api,{method:"GET",redirect:"follow"});
+    const t=(await r.text()).slice(0,300);
+    CERR=t.includes('"ok"')
+      ? "① 後台連得上，回應正常。接著測寫入…"
+      : "① 後台回傳的不是預期內容，可能部署權限不是「所有人」。收到的是：\n"+t;
+    render();
+    if(!t.includes('"ok"'))return;
+    const j=await callApi("list");
+    CERR=j.error?("② 後台有回應，但說：「"+j.error+"」\n通行碼要跟 Code.gs 裡的 KEY 完全一樣（目前工具帶的是「"+CLOUD.key+"」）")
+      :("② 一切正常。後台目前有 "+((j.list||[]).length)+" 份流程。");
+    if(j.ok)CLIST=j.list||[];
+  }catch(e){CERR="連線失敗："+(e.message||e)+"\n可能是網址打錯、部署權限不是「所有人」，或公司網路擋掉 script.google.com。";}
   render();}
 async function cloudOpen(id){
   try{const r=await callApi("load",{id});
     if(r.error)return toast(r.error);
-    applyLoaded({meta:r.data.meta,posts:r.data.posts,rows:r.data.rows,
+    applyLoaded({__cloud:1,meta:r.data.meta,posts:r.data.posts,rows:r.data.rows,
                  contacts:r.data.contacts,items:r.data.items});
-    CLOUD.id=r.id;CLOUD.ver=r.ver;CLOUD.name=r.name;
-    panel=null;render();toast(`已開啟《${r.name}》v${r.ver}`);}
+    CLOUD.id=r.id;CLOUD.ver=r.ver;CLOUD.name=r.name;setDocUrl(r.id);
+    panel=null;CERR="";render();toast(`已開啟《${r.name}》v${r.ver}`);}
   catch(e){toast(e.message);}}
 async function cloudSave(asNew){
   if(!cloudOn())return toast("還沒設定雲端");
@@ -994,10 +1064,10 @@ async function cloudSave(asNew){
       if(confirm(`這份已經被 ${r.by} 在 ${t} 改成 v${r.ver} 了。\n\n按「確定」載入他們的最新版（你目前的修改會不見）\n按「取消」留在這裡，你可以改存成新的一份`))
         cloudOpen(CLOUD.id);
       return;}
-    if(r.error)return toast(r.error);
-    CLOUD.id=r.id;CLOUD.ver=r.ver;CLOUD.name=r.name;dirty=false;
-    CLIST=null;render();toast(`已儲存《${r.name}》v${r.ver}`);}
-  catch(e){toast(e.message);}}
+    if(r.error){CERR="儲存失敗："+r.error;panel="cloud";render();return;}
+    CLOUD.id=r.id;CLOUD.ver=r.ver;CLOUD.name=r.name;dirty=false;setDocUrl(r.id);
+    CERR="";cloudList();toast(`已儲存《${r.name}》v${r.ver}`);}
+  catch(e){CERR="儲存失敗："+(e.message||e);panel="cloud";render();}}
 async function cloudHistory(id){
   panel="cloud";CLOG="loading";render();
   try{const r=await callApi("history",{id});CLOG=r.ok?r.log:[];}
@@ -1039,6 +1109,7 @@ function copyShare(){
   if(navigator.clipboard)navigator.clipboard.writeText(t.value).then(done,()=>{document.execCommand("copy");done();});
   else{document.execCommand("copy");done();}}
 function applyLoaded(d,quiet){
+  if(!quiet&&!d.__cloud){CLOUD.id="";CLOUD.ver=0;}
   Object.entries(d.meta||{}).forEach(([k,v])=>{const e=$("m-"+k);if(e)e.value=v;});
   S={posts:d.posts||[],rows:(d.rows||[]).map(r=>({desc:"",note:"",cells:{},lvl:0,...r,uid:++uid})),
      contacts:d.contacts||[],items:d.items||[]};
@@ -1413,9 +1484,14 @@ $("fileIn").onchange=function(){const f=this.files[0];if(!f)return;
 
 /* init */
 drawBlocks();
-(()=>{const q=new URLSearchParams(location.search);
+(async()=>{const q=new URLSearchParams(location.search);
   CLOUD.api=q.get("api")||"";CLOUD.key=q.get("key")||"";
-  if(CLOUD.api)cloudList();})();
+  if(!CLOUD.api)return;
+  await cloudList();
+  if(CERR||!Array.isArray(CLIST)||!CLIST.length)return;
+  const doc=q.get("doc");
+  const target=(doc&&CLIST.some(x=>x.id===doc))?doc:CLIST[0].id;
+  await cloudOpen(target);})();
 loadHash();
 ["m-name","m-date","m-start","m-venue","m-ver"].forEach(id=>$(id).oninput=render);
 $("w-guests").oninput=drawWiz;$("w-start").oninput=drawWiz;
