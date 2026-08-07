@@ -97,9 +97,6 @@ main{display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .btn.pri:hover{background:#1a3149}
 .sep{width:1px;height:19px;background:var(--line)}
 .lbl{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--ink3);text-transform:uppercase}
-.chip{padding:4px 9px;border:1px solid var(--line);background:var(--panel);border-radius:16px;font-size:12px;transition:.12s}
-.chip:hover{border-color:var(--indigo)}
-.chip.on{background:var(--indigo);color:#fff;border-color:var(--indigo)}
 .badge{display:inline-block;min-width:15px;padding:0 4px;margin-left:5px;border-radius:8px;background:var(--red);color:#fff;font-size:10px;font-family:"IBM Plex Mono",monospace;text-align:center}
 .cloudbar{display:flex;align-items:center;gap:9px;padding:7px 18px;background:var(--indigo-soft);
   border-bottom:1px solid var(--line);font-size:12.5px;color:var(--indigo)}
@@ -237,9 +234,6 @@ td textarea{padding:6px 7px;font-size:12.5px;line-height:1.55;resize:none;min-he
 .card .tag{display:inline-block;background:var(--indigo);color:#fff;font-size:10px;letter-spacing:.08em;
   padding:2px 7px;border-radius:9px;margin-bottom:8px;width:auto}
 @media(max-width:820px){.cards{grid-template-columns:1fr}}
-.empty{text-align:center;padding:70px 20px;color:var(--ink3)}
-.empty h3{font-size:16px;font-weight:500;color:var(--ink2);margin-bottom:7px}
-.empty p{font-size:13px;max-width:430px;margin:0 auto 16px}
 
 /* modal */
 .mask{position:fixed;inset:0;background:rgba(22,25,30,.42);display:none;align-items:center;justify-content:center;z-index:60;padding:20px}
@@ -268,7 +262,6 @@ td textarea{padding:6px 7px;font-size:12.5px;line-height:1.55;resize:none;min-he
 .gopt:hover{border-color:var(--indigo);background:var(--indigo-soft)}
 .gopt b{display:block;font-size:13px;font-weight:700}
 .gopt span{font-size:11.5px;color:var(--ink3)}
-.fin{border:1px solid var(--line);border-radius:3px;padding:6px 9px;font-size:13px;background:var(--panel)}
 .mft{padding:13px 22px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--panel)}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--ink);color:#fff;padding:9px 17px;border-radius:3px;font-size:13px;opacity:0;transition:.2s;z-index:99;pointer-events:none}
 .toast.show{transform:translateX(-50%);opacity:1}
